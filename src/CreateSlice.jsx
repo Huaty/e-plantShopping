@@ -1,34 +1,64 @@
 import { createSlice } from '@reduxjs/toolkit';
 
+const initialState = {
+    cartItems: [],
+    totalQuantity: 0,
+    totalCost: 0,
+};
+
 export const cartSlice = createSlice({
     name: 'cart',
-    initialState: {
-        items: [],
-    },
+    initialState,
     reducers: {
         addItem: (state, action) => {
-            const { name, image, cost } = action.payload;
-            const existingItem = state.items.find(item => item.name === name);
-            if (existingItem) {
-                existingItem.quantity++;
-            } else {
-                state.items.push({ name, image, cost, quantity: 1 });
-            }
+            const { name, image, description, cost } = action.payload;
+            const newItem = {
+                name,
+                image,
+                description,
+                cost,
+                quantity: 1
+            };
+            state.cartItems.push(newItem);
+            state.totalQuantity++;
+            state.totalCost += parseInt(cost.replace('$', ''), 10);
         },
         removeItem: (state, action) => {
-            const itemName = action.payload;
-            state.items = state.items.filter(item => item.name !== itemName);
+            const { name } = action.payload;
+            state.cartItems = state.cartItems.filter(item => item.name !== name);
+            state.totalQuantity--;
+            state.totalCost -= parseInt(action.payload.cost.replace('$', ''), 10);
         },
-        updateQuantity: (state, action) => {
-            const { name, quantity } = action.payload;
-            const itemToUpdate = state.items.find(item => item.name === name);
-            if (itemToUpdate) {
-                itemToUpdate.quantity += quantity;
+        incrementQuantity: (state, action) => {
+            const { name } = action.payload;
+            const item = state.cartItems.find(item => item.name === name);
+            if (item) {
+                item.quantity++;
+                state.totalQuantity++;
+                state.totalCost += parseInt(item.cost.replace('$', ''), 10);
             }
+        },
+        decrementQuantity: (state, action) => {
+            const { name } = action.payload;
+            const item = state.cartItems.find(item => item.name === name);
+            if (item && item.quantity > 1) {
+                item.quantity--;
+                state.totalQuantity--;
+                state.totalCost -= parseInt(item.cost.replace('$', ''), 10);
+            } else if (item && item.quantity === 1) {
+                state.totalQuantity--;
+                state.totalCost -= parseInt(item.cost.replace('$', ''), 10);
+                state.cartItems = state.cartItems.filter(item => item.name !== name);
+            }
+        },
+        clearCart: (state) => {
+            state.cartItems = [];
+            state.totalQuantity = 0;
+            state.totalCost = 0;
         },
     },
 });
 
-export const { addItem, removeItem, updateQuantity } = cartSlice.actions;
+export const { addItem, removeItem, incrementQuantity, decrementQuantity, clearCart } = cartSlice.actions;
 
 export default cartSlice.reducer;
